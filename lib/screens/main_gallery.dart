@@ -15,11 +15,12 @@ class MainGalleryScreen extends StatefulWidget {
 
 class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindingObserver {
   List<AssetEntity> _mediaList = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _hasPermission = false;
   CameraController? _cameraController;
   bool _isCameraInitialized = false;
   Timer? _refreshTimer;
+  bool _initialLoadComplete = false;
 
   @override
   void initState() {
@@ -41,7 +42,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     // Refresh gallery when app comes to foreground
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _hasPermission) {
       _loadGalleryImages();
     }
   }
@@ -49,26 +50,49 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
   void _startAutoRefresh() {
     // Auto-refresh gallery every 5 seconds to detect new images
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted && _hasPermission) {
+      if (mounted && _hasPermission && _initialLoadComplete) {
         _loadGalleryImages();
       }
     });
   }
 
   Future<void> _requestPermissions() async {
-    final cameraStatus = await Permission.camera.request();
-    final photoStatus = await Permission.photos.request();
+    try {
+      // Request camera permission
+      final cameraStatus = await Permission.camera.request();
 
-    if (cameraStatus.isGranted && photoStatus.isGranted) {
+      // Request photo permission using PhotoManager
+      final PermissionState photoStatus = await PhotoManager.requestPermissionExtend();
+
+      if (cameraStatus.isGranted && photoStatus.isAuth) {
+        if (mounted) {
+          setState(() {
+            _hasPermission = true;
+          });
+        }
+
+        // Initialize camera in background
+        _initializeCamera();
+
+        // Load gallery images
+        await _loadGalleryImages();
+      } else {
+        if (mounted) {
+          setState(() {
+            _hasPermission = false;
+            _isLoading = false;
+          });
+          _showPermissionDialog();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error requesting permissions: $e');
       if (mounted) {
         setState(() {
-          _hasPermission = true;
+          _hasPermission = false;
+          _isLoading = false;
         });
       }
-      await _initializeCamera();
-      await _loadGalleryImages();
-    } else {
-      _showPermissionDialog();
     }
   }
 
@@ -93,32 +117,63 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
   }
 
   Future<void> _loadGalleryImages() async {
+    if (!_hasPermission) return;
+
+    // Only show loading on initial load or manual refresh
+    if (!_initialLoadComplete) {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+        });
+      }
+    }
+
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
-      if (ps.isAuth) {
-        List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-          type: RequestType.image,
-        );
 
-        if (albums.isNotEmpty) {
-          List<AssetEntity> media = await albums[0].getAssetListPaged(
-            page: 0,
-            size: 100,
-          );
-
-          if (mounted) {
-            setState(() {
-              _mediaList = media;
-              _isLoading = false;
-            });
-          }
+      if (!ps.isAuth) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _hasPermission = false;
+            _initialLoadComplete = true;
+          });
         }
+        return;
+      }
+
+      List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
+        type: RequestType.image,
+        onlyAll: true,
+      );
+
+      List<AssetEntity> allMedia = [];
+
+      if (albums.isNotEmpty) {
+        // Get all images from the first album (usually "Recent" or "All Photos")
+        final int totalCount = await albums[0].assetCountAsync;
+
+        if (totalCount > 0) {
+          allMedia = await albums[0].getAssetListRange(
+            start: 0,
+            end: totalCount > 100 ? 100 : totalCount,
+          );
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _mediaList = allMedia;
+          _isLoading = false;
+          _initialLoadComplete = true;
+        });
       }
     } catch (e) {
       debugPrint('Error loading gallery: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _initialLoadComplete = true;
         });
       }
     }
@@ -215,8 +270,9 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Camera is not initialized yet'),
+          content: Text('Camera is not initialized yet. Please wait...'),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
         ),
       );
     }
@@ -248,7 +304,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                   Row(
                     children: [
                       IconButton(
-                        onPressed: _refreshGallery,
+                        onPressed: _hasPermission ? _refreshGallery : null,
                         icon: const Icon(Icons.refresh, color: Colors.white),
                         iconSize: 24,
                         tooltip: 'Refresh Gallery',
@@ -330,23 +386,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                   ),
                   const SizedBox(height: 16),
                   Expanded(
-                    child: _hasPermission
-                        ? _isLoading
-                        ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                      ),
-                    )
-                        : _buildGalleryGrid()
-                        : const Center(
-                      child: Text(
-                        'Camera and Gallery permissions required',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ),
+                    child: _buildContent(),
                   ),
                 ],
               ),
@@ -355,6 +395,30 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
         ),
       ),
     );
+  }
+
+  Widget _buildContent() {
+    if (!_hasPermission && !_isLoading) {
+      return const Center(
+        child: Text(
+          'Camera and Gallery permissions required',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.white54,
+          ),
+        ),
+      );
+    }
+
+    if (_isLoading && !_initialLoadComplete) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Colors.white,
+        ),
+      );
+    }
+
+    return _buildGalleryGrid();
   }
 
   Widget _buildGalleryGrid() {

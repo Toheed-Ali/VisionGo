@@ -1,13 +1,14 @@
 {
   "project_info": {
-    "project_number": "518829442845",
-    "project_id": "visiongp-25fc7",
-    "storage_bucket": "visiongp-25fc7.firebasestorage.app"
+    "project_number": "627643144536",
+    "firebase_url": "https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "vision-go-b1cda",
+    "storage_bucket": "vision-go-b1cda.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:518829442845:android:beed51ac5d3afd569b03f4",
+        "mobilesdk_app_id": "1:627643144536:android:16e48b24818377e69b2d2d",
         "android_client_info": {
           "package_name": "com.example.object_detection"
         }
@@ -15,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDkQxoaKglhRHpDlLYgmBQxYaZS8xWAQVQ"
+          "current_key": "AIzaSyDOVZVg9RTk_MKq_-j8sSM8ViJ0lhX0L-c"
         }
       ],
       "services": {

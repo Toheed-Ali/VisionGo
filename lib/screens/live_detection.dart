@@ -314,10 +314,6 @@ class _LiveDetectionScreenState extends State<LiveDetectionScreen> {
                         color: _isFlashOn ? Colors.amber : null,
                       ),
                       const SizedBox(width: 8),
-                      _circleButton(
-                        icon: Icons.camera_alt,
-                        onPressed: _captureFrame,
-                      ),
                     ],
                   ),
                 ],
