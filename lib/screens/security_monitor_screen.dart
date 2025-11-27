@@ -1,0 +1,568 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
+import '../services/firebase_security_service.dart';
+import 'package:intl/intl.dart';
+
+class SecurityMonitorScreen extends StatefulWidget {
+  final String pairingCode;
+
+  const SecurityMonitorScreen({
+    super.key,
+    required this.pairingCode,
+  });
+  
+
+  @override
+  State<SecurityMonitorScreen> createState() => _SecurityMonitorScreenState();
+}
+
+class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
+  final FirebaseSecurityService _securityService = FirebaseSecurityService();
+  List<Map<String, dynamic>> _alerts = [];
+  bool _isPaired = false;
+  bool _isValidating = true;
+  List<String> _monitoredObjects = [];
+  StreamSubscription? _alertsSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _validateAndConnect();
+  }
+
+  Future<void> _validateAndConnect() async {
+    setState(() {
+      _isValidating = true;
+    });
+
+    // Validate the pairing code
+    final isValid = await _securityService.validateCode(widget.pairingCode);
+
+    if (!isValid) {
+      // Code is invalid - show error and go back
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Invalid pairing code'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // Wait a bit then go back
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      }
+      return;
+    }
+
+    // Code is valid - connect and load data
+    final pairingInfo = await _securityService.getPairingInfo(widget.pairingCode);
+    if (pairingInfo != null) {
+      final objects = pairingInfo['selectedObjects'];
+      if (objects is List) {
+        _monitoredObjects = objects.cast<String>();
+      }
+    }
+
+    // Load existing alerts
+    await _loadAlerts();
+
+    if (mounted) {
+      setState(() {
+        _isPaired = true;
+        _isValidating = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Successfully paired with camera'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Start real-time alert monitoring
+      _startAlertMonitoring();
+    }
+  }
+
+  void _startAlertMonitoring() {
+    // Use Firebase real-time stream for instant updates
+    _alertsSubscription = _securityService
+        .streamAlerts(widget.pairingCode)
+        .listen((alerts) {
+      if (mounted) {
+        setState(() {
+          _alerts = alerts;
+        });
+      }
+    }, onError: (error) {
+      debugPrint('Error in alerts stream: $error');
+    });
+  }
+
+  Future<void> _loadAlerts() async {
+    try {
+      final alerts = await _securityService.getAlerts(widget.pairingCode);
+
+      if (mounted) {
+        setState(() {
+          _alerts = alerts;
+        });
+      }
+    } catch (e) {
+      print('Error loading alerts: $e');
+    }
+  }
+
+  String _formatTime(int timestamp) {
+    try {
+      final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inMinutes < 1) {
+        return 'Just now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes}m ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}h ago';
+      } else {
+        return DateFormat('MMM d, h:mm a').format(dateTime);
+      }
+    } catch (e) {
+      return 'Unknown time';
+    }
+  }
+
+  String _formatDetailedTime(int timestamp) {
+    try {
+      final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return DateFormat('EEEE, MMM d, yyyy \'at\' h:mm:ss a').format(dateTime);
+    } catch (e) {
+      return 'Unknown time';
+    }
+  }
+
+  void _unpair() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'Unpair Device?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Are you sure you want to disconnect from this camera?',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () async {
+              await _securityService.deletePairing(widget.pairingCode);
+              if (mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Go back to security screen
+              }
+            },
+            child: const Text('Unpair', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _refreshData() async {
+    setState(() {
+      _isValidating = true;
+    });
+
+    // Reload pairing info
+    final pairingInfo = await _securityService.getPairingInfo(widget.pairingCode);
+    if (pairingInfo != null) {
+      final objects = pairingInfo['selectedObjects'];
+      if (objects is List) {
+        setState(() {
+          _monitoredObjects = objects.cast<String>();
+        });
+      }
+    }
+
+    // Reload alerts
+    await _loadAlerts();
+
+    setState(() {
+      _isValidating = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Data refreshed'),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _alertsSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isValidating) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF000000),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Colors.tealAccent),
+              SizedBox(height: 16),
+              Text(
+                'Validating pairing code...',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF000000),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Monitor Alerts',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _refreshData,
+                    icon: const Icon(Icons.refresh, color: Colors.tealAccent),
+                    tooltip: 'Refresh',
+                  ),
+                  IconButton(
+                    onPressed: _isPaired ? _unpair : null,
+                    icon: Icon(
+                      Icons.link_off,
+                      color: _isPaired ? Colors.red : Colors.white24,
+                    ),
+                    tooltip: 'Unpair Device',
+                  ),
+                ],
+              ),
+            ),
+
+            // Connection Status
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _isPaired
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _isPaired ? Colors.green : Colors.orange,
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _isPaired ? Icons.check_circle : Icons.pending,
+                        color: _isPaired ? Colors.green : Colors.orange,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _isPaired ? 'Connected to Camera' : 'Connecting...',
+                              style: TextStyle(
+                                color: _isPaired ? Colors.green : Colors.orange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Code: ${widget.pairingCode}',
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_monitoredObjects.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Divider(color: Colors.white12),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Monitored objects: ${_monitoredObjects.join(', ')}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Alerts Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Alerts (${_alerts.length})',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (_alerts.isNotEmpty)
+                    TextButton(
+                      onPressed: _loadAlerts,
+                      child: const Row(
+                        children: [
+                          Icon(Icons.refresh, color: Colors.tealAccent, size: 16),
+                          SizedBox(width: 4),
+                          Text(
+                            'Refresh',
+                            style: TextStyle(color: Colors.tealAccent),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Alerts List
+            Expanded(
+              child: _alerts.isEmpty
+                  ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.notifications_none,
+                      size: 80,
+                      color: Colors.white.withOpacity(0.2),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No alerts yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white.withOpacity(0.4),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _isPaired
+                          ? 'You\'ll be notified when objects are detected'
+                          : 'Waiting for connection...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: _alerts.length,
+                itemBuilder: (context, index) {
+                  final alert = _alerts[index];
+                  final isNew = index == 0; // Most recent alert is considered "new"
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: isNew
+                          ? Colors.red.withOpacity(0.1)
+                          : const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isNew
+                            ? Colors.red
+                            : Colors.red.withOpacity(0.3),
+                        width: isNew ? 2 : 1,
+                      ),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isNew
+                              ? Colors.red.withOpacity(0.2)
+                              : Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          isNew ? Icons.warning : Icons.notifications,
+                          color: isNew ? Colors.red : Colors.red.withOpacity(0.7),
+                          size: 24,
+                        ),
+                      ),
+                      title: Row(
+                        children: [
+                          Text(
+                            alert['objectLabel']?.toString() ?? 'Unknown Object',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: isNew ? FontWeight.bold : FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (alert['confidence'] != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.tealAccent.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${(alert['confidence'] * 100).toInt()}%',
+                                style: const TextStyle(
+                                  color: Colors.tealAccent,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatTime(alert['timestamp'] as int? ?? 0),
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatDetailedTime(alert['timestamp'] as int? ?? 0),
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.3),
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: isNew
+                          ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'NEW',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                          : Icon(
+                        Icons.chevron_right,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Bottom Info Bar
+            if (_alerts.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Latest: ${_alerts.first['objectLabel']}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      _formatTime(_alerts.first['timestamp'] as int? ?? 0),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
