@@ -1,32 +1,46 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'services/notification_service.dart';
+import 'services/firebase_security_service.dart';
 import 'screens/login.dart';
 import 'screens/signup.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 
-// Background message handler (must be top-level function)
+/// Background message handler for Firebase Cloud Messaging
+/// Must be a top-level function for Flutter to access it when app is terminated
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print('Handling background message: ${message.messageId}');
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().initialize();
+  
+  if (kDebugMode) {
+    print('Background notification: ${message.notification?.title}');
+  }
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
-
-  // Set up background message handler
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Initialize notification service
-  await NotificationService().initialize();
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await NotificationService().initialize();
+    await FirebaseSecurityService().initialize();
+    
+    // Handle app opened from notification (terminated state)
+    final initialMessage = await NotificationService().getInitialMessage();
+    if (initialMessage != null && kDebugMode) {
+      print('App opened from notification: ${initialMessage.messageId}');
+    }
+  } catch (e) {
+    if (kDebugMode) print('Initialization error: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -38,7 +52,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   bool? _hasSeenOnboarding;
   User? _currentUser;
   bool _isAuthChecked = false;
@@ -46,60 +60,130 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeApp();
   }
 
-  Future<void> _initializeApp() async {
-    // Check onboarding status
-    final prefs = await SharedPreferences.getInstance();
-    final seen = prefs.getBool('onboarding_completed') ?? false;
-
-    // Get current user
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (mounted) {
-      setState(() {
-        _hasSeenOnboarding = seen;
-        _currentUser = user;
-        _isAuthChecked = true;
-      });
-    }
-
-    // Listen to authentication state changes
-    FirebaseAuth.instance.authStateChanges().listen((User? user) {
-      if (mounted) {
-        setState(() {
-          _currentUser = user;
-        });
-      }
-    });
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      _checkMonitoringState();
+    }
+  }
+
+  /// Check if there's an active monitoring session when app resumes
+  Future<void> _checkMonitoringState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final activeCode = prefs.getString('active_monitoring_code');
+      
+      if (activeCode != null && kDebugMode) {
+        print('Active monitoring: $activeCode');
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error checking monitoring state: $e');
+    }
+  }
+
+  /// Initialize app state: onboarding, auth, and monitoring restoration
+  Future<void> _initializeApp() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final seen = prefs.getBool('onboarding_completed') ?? false;
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (mounted) {
+        setState(() {
+          _hasSeenOnboarding = seen;
+          _currentUser = user;
+          _isAuthChecked = true;
+        });
+      }
+
+      // Listen for auth state changes
+      FirebaseAuth.instance.authStateChanges().listen((User? user) {
+        if (mounted) {
+          setState(() => _currentUser = user);
+        }
+      });
+
+      await _restoreMonitoringIfNeeded();
+    } catch (e) {
+      if (kDebugMode) print('App initialization error: $e');
+      if (mounted) {
+        setState(() {
+          _hasSeenOnboarding = false;
+          _isAuthChecked = true;
+        });
+      }
+    }
+  }
+
+  /// Restore active monitoring session if app was restarted
+  Future<void> _restoreMonitoringIfNeeded() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final activeCode = prefs.getString('active_monitoring_code');
+      final monitoredObjects = prefs.getStringList('monitored_objects');
+
+      if (activeCode != null && monitoredObjects != null) {
+        final securityService = FirebaseSecurityService();
+        final isValid = await securityService.validateCode(activeCode);
+
+        if (!isValid) {
+          // Clean up invalid pairing
+          await prefs.remove('active_monitoring_code');
+          await prefs.remove('monitored_objects');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) print('Error restoring monitoring: $e');
+    }
+  }
+
+  /// Determine which screen to show based on app state
   Widget _getInitialScreen() {
-    // If onboarding not completed, show onboarding
     if (_hasSeenOnboarding == false) {
       return const OnboardingScreen();
     }
-
-    // If user is already logged in, go directly to home screen
+    
     if (_currentUser != null) {
       return const HomeScreen();
     }
-
-    // Otherwise show login screen
+    
     return const LoginScreen();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Show loading screen while checking onboarding status and auth state
+    // Show loading while checking onboarding and auth status
     if (_hasSeenOnboarding == null || !_isAuthChecked) {
-      return const MaterialApp(
+      return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
           backgroundColor: Colors.black,
           body: Center(
-            child: CircularProgressIndicator(color: Colors.tealAccent),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(color: Colors.tealAccent),
+                const SizedBox(height: 16),
+                Text(
+                  'Initializing VisionGo...',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -111,6 +195,7 @@ class _MyAppState extends State<MyApp> {
       theme: ThemeData(
         primarySwatch: Colors.pink,
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        scaffoldBackgroundColor: Colors.black,
       ),
       home: _getInitialScreen(),
       routes: {

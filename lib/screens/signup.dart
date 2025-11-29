@@ -159,12 +159,12 @@ class _SignupScreenState extends State<SignupScreen> {
                   width: size.width * 0.9,
                   padding: const EdgeInsets.all(25),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(35),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -182,7 +182,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.red.withOpacity(0.3),
+                                color: Colors.red.withValues(alpha: 0.3),
                                 blurRadius: 15,
                                 spreadRadius: 2,
                               ),
@@ -222,7 +222,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             hintStyle: const TextStyle(color: Colors.white70),
                             prefixIcon: const Icon(Icons.person_outline, color: Colors.white70),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
+                            fillColor: Colors.white.withValues(alpha: 0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -238,7 +238,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             hintStyle: const TextStyle(color: Colors.white70),
                             prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
+                            fillColor: Colors.white.withValues(alpha: 0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -264,7 +264,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
+                            fillColor: Colors.white.withValues(alpha: 0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -290,7 +290,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               },
                             ),
                             filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
+                            fillColor: Colors.white.withValues(alpha: 0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(20),
                               borderSide: BorderSide.none,
@@ -309,7 +309,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.red.withOpacity(0.3),
+                                color: Colors.red.withValues(alpha: 0.3),
                                 blurRadius: 10,
                                 offset: const Offset(0, 4),
                               ),

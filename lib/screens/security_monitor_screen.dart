@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/firebase_security_service.dart';
 import '../services/notification_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class SecurityMonitorScreen extends StatefulWidget {
@@ -14,7 +13,7 @@ class SecurityMonitorScreen extends StatefulWidget {
   State<SecurityMonitorScreen> createState() => _SecurityMonitorScreenState();
 }
 
-class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
+class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> with WidgetsBindingObserver {
   final _securityService = FirebaseSecurityService();
   final _notificationService = NotificationService();
   List<Map<String, dynamic>> _alerts = [];
@@ -22,17 +21,35 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
   bool _isValidating = true;
   List<String> _monitoredObjects = [];
   StreamSubscription? _alertsSubscription;
+  bool _isMonitoring = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _validateAndConnect();
   }
 
   @override
   void dispose() {
-    _alertsSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    // Don't cancel subscription or stop monitoring here
+    // Keep it running in background
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (state == AppLifecycleState.resumed) {
+      // App came back to foreground
+      debugPrint('SecurityMonitor: App resumed, refreshing data...');
+      _refreshData();
+    } else if (state == AppLifecycleState.paused) {
+      // App going to background - monitoring continues
+      debugPrint('SecurityMonitor: App paused, monitoring continues in background');
+    }
   }
 
   Future<void> _validateAndConnect() async {
@@ -61,6 +78,9 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
       }
     }
 
+    // IMPORTANT: Store this pairing locally as a monitor device
+    await _securityService.storePairingAsMonitor(widget.pairingCode, _monitoredObjects);
+
     // Save FCM token for monitor device
     final fcmToken = _notificationService.fcmToken;
     if (fcmToken != null) {
@@ -88,30 +108,76 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
         ),
       );
 
-      _startAlertMonitoring();
+      // Start monitoring
+      await _startMonitoring();
     }
   }
 
-  void _startAlertMonitoring() {
-    // Listen to Firebase alerts in real-time
-    _alertsSubscription = _securityService.streamAlerts(widget.pairingCode).listen(
-          (alerts) {
-        if (mounted) {
-          setState(() => _alerts = alerts);
+  Future<void> _startMonitoring() async {
+    try {
+      debugPrint('SecurityMonitor: Starting monitoring...');
 
-          // Show notification for new alerts
-          if (alerts.isNotEmpty) {
-            final latestAlert = alerts.first;
-            _notificationService.sendSecurityAlert(
-              object: latestAlert['objectLabel'] ?? 'Unknown',
-              confidence: (latestAlert['confidence'] ?? 0.0) as double,
-              pairingCode: widget.pairingCode,
-            );
+      // Start monitoring in the service
+      await _securityService.startMonitoring(widget.pairingCode, _monitoredObjects);
+
+      // Setup alert stream for UI updates
+      _alertsSubscription?.cancel();
+      _alertsSubscription = _securityService.streamAlerts(widget.pairingCode).listen(
+            (alerts) {
+          if (mounted) {
+            setState(() => _alerts = alerts);
+
+            // Show notification for new alerts
+            if (alerts.isNotEmpty) {
+              final latestAlert = alerts.first;
+              final objectLabel = latestAlert['objectLabel'] ?? 'Unknown';
+
+              // Only notify if it's a monitored object
+              if (_monitoredObjects.contains(objectLabel)) {
+                _notificationService.sendSecurityAlert(
+                  object: objectLabel,
+                  confidence: (latestAlert['confidence'] ?? 0.0) as double,
+                  pairingCode: widget.pairingCode,
+                );
+              }
+            }
           }
-        }
-      },
-      onError: (error) => debugPrint('Error in alerts stream: $error'),
-    );
+        },
+        onError: (error) {
+          debugPrint('Error in alerts stream: $error');
+        },
+      );
+
+      setState(() => _isMonitoring = true);
+
+      debugPrint('SecurityMonitor: Monitoring started successfully');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.notifications_active, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Background notifications enabled'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error starting monitoring: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error starting monitoring: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadAlerts() async {
@@ -146,7 +212,6 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
     }
   }
 
-
   void _unpair() {
     showDialog(
       context: context,
@@ -154,7 +219,7 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
         backgroundColor: const Color(0xFF1E1E1E),
         title: const Text('Unpair Device?', style: TextStyle(color: Colors.white)),
         content: const Text(
-          'Are you sure you want to disconnect from this camera?',
+          'Are you sure you want to disconnect from this camera?\n\nNote: You can always reconnect using the same pairing code.',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -164,13 +229,28 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
           ),
           TextButton(
             onPressed: () async {
-              // Cancel notifications
+              // Stop monitoring
+              await _securityService.stopMonitoring();
+
+              // Cancel alert subscription
+              await _alertsSubscription?.cancel();
+
+              // Cancel notifications for this pairing
               await _notificationService.cancelAllNotifications();
 
+              // Delete pairing
               await _securityService.deletePairing(widget.pairingCode);
+
               if (mounted) {
-                Navigator.pop(context);
-                Navigator.pop(context);
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Close monitor screen
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Device unpaired successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
               }
             },
             child: const Text('Unpair', style: TextStyle(color: Colors.red)),
@@ -207,7 +287,7 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isValidating) {
+    if (_isValidating && !_isPaired) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -223,19 +303,27 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildConnectionStatus(),
-            const SizedBox(height: 20),
-            _buildAlertsHeader(),
-            const SizedBox(height: 8),
-            Expanded(child: _buildAlertsList()),
-            if (_alerts.isNotEmpty) _buildBottomBar(),
-          ],
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+        // Don't stop monitoring when screen is popped
+        // Monitoring continues in background
+        debugPrint('SecurityMonitor: Screen popped, monitoring continues');
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildConnectionStatus(),
+              const SizedBox(height: 20),
+              _buildAlertsHeader(),
+              const SizedBox(height: 8),
+              Expanded(child: _buildAlertsList()),
+              if (_alerts.isNotEmpty) _buildBottomBar(),
+            ],
+          ),
         ),
       ),
     );
@@ -299,12 +387,26 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
                           style: TextStyle(color: _isPaired ? Colors.green : Colors.orange, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(width: 8),
-                        if (_isPaired)
+                        if (_isPaired && _isMonitoring)
                           const Icon(Icons.notifications_active, color: Colors.tealAccent, size: 16),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text('Code: ${widget.pairingCode}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                    if (_isMonitoring) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.tealAccent.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Background monitoring active',
+                          style: TextStyle(color: Colors.tealAccent, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -361,7 +463,7 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
               _isPaired ? 'You\'ll be notified when objects are detected' : 'Waiting for connection...',
               style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.3)),
             ),
-            if (_isPaired) ...[
+            if (_isPaired && _isMonitoring) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),

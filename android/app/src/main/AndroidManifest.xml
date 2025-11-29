@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
-    <!-- Internet permission for potential cloud-based ML models -->
+    <!-- Internet permission for Firebase and cloud services -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Network state for checking connectivity -->
@@ -23,8 +23,22 @@
 
     <!-- Notification permissions (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Vibration for notifications -->
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Wake lock for background notifications -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Receive boot completed for background service -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Foreground service permission (Android 9+) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- Schedule exact alarms (Android 12+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <!-- Camera features -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -37,8 +51,10 @@
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"
         android:preserveLegacyExternalStorage="true"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true">
 
+        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -48,18 +64,21 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true">
 
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
 
+            <!-- Main launcher intent -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Allow the app to handle image files -->
+            <!-- Handle image files -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -73,7 +92,51 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
 
+            <!-- Handle notification taps -->
+            <intent-filter>
+                <action android:name="FLUTTER_NOTIFICATION_CLICK" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
         </activity>
+
+        <!-- Firebase Cloud Messaging Service -->
+        <service
+            android:name="com.google.firebase.messaging.FirebaseMessagingService"
+            android:exported="false"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Custom FCM Service (if you need custom handling) -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false"
+            android:directBootAware="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Notification Service for local notifications -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false"
+            android:enabled="true" />
 
         <!-- FileProvider for sharing images -->
         <provider
@@ -86,21 +149,43 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Firebase Cloud Messaging metadata -->
+        <!-- Firebase Cloud Messaging Metadata -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@mipmap/ic_launcher" />
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="security_alerts" />
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@android:color/holo_blue_light" />
+
+        <!-- Notification sound (optional) -->
+        <!-- <meta-data
+            android:name="com.google.firebase.messaging.default_notification_sound"
+            android:resource="@raw/notification_sound" /> -->
+
+        <!-- Firebase Analytics (optional) -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
+
+        <!-- Firebase Crashlytics (optional) -->
+        <!-- <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="true" /> -->
 
         <!-- Flutter embedding version -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Disable automatic backup to prevent notification channel duplication -->
+        <meta-data
+            android:name="io.flutter.embedding.android.SplashScreenDrawable"
+            android:resource="@drawable/launch_background" />
 
     </application>
 
@@ -134,6 +219,18 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="image/*" />
         </intent>
+
+        <!-- For sharing -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="*/*" />
+        </intent>
+
+        <!-- For notification settings -->
+        <intent>
+            <action android:name="android.settings.APP_NOTIFICATION_SETTINGS"/>
+        </intent>
+
     </queries>
 
 </manifest>
