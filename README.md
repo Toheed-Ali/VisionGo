@@ -6,6 +6,7 @@ A professional Flutter-based mobile application that combines real-time object d
 
 VisionGo is a comprehensive computer vision application designed for both everyday object detection and specialized security monitoring. The app enables users to analyze images from their gallery, perform live camera detection, and establish secure device pairings for real-time security surveillance with instant push notifications.
 
+
 ## Key Features
 
 ### Object Detection
