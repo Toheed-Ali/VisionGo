@@ -7,137 +7,79 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final name = user?.displayName ?? "User Name";
-    final email = user?.email ?? "user@example.com";
 
-    final darkTheme = ThemeData.dark(useMaterial3: true).copyWith(
+    // Dark theme setup
+    final theme = ThemeData.dark(useMaterial3: true).copyWith(
       colorScheme: ColorScheme.fromSeed(
         seedColor: Colors.teal,
         brightness: Brightness.dark,
       ),
     );
-
-    final theme = darkTheme;
-    final colorScheme = theme.colorScheme;
+    final colors = theme.colorScheme;
 
     return Theme(
       data: theme,
       child: Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: colors.surface,
         appBar: AppBar(
-          title: const Text("Account"),
+          title: const Text("VisionGo"),
           centerTitle: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
-
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Profile Card
-            Card(
-              elevation: 0,
-              color: colorScheme.surfaceContainerHighest,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 38,
-                      backgroundColor: colorScheme.primaryContainer,
-                      child: Icon(
-                        Icons.person,
-                        size: 42,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Text(
-                      name,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      email,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            // Profile section
+            _buildProfileCard(user, colors, theme),
 
             const SizedBox(height: 16),
 
-            Padding(
-              padding: const EdgeInsets.only(left: 4, bottom: 8),
-              child: Text(
-                "Settings",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            // Settings section title
+            _buildSectionTitle("Settings", colors, theme),
 
-            _m3Tile(
-              icon: Icons.security,
-              title: "Security Devices",
-              subtitle: "Manage paired devices",
-              onTap: () {},
-              colorScheme: colorScheme,
-            ),
-
-            _m3Tile(
-              icon: Icons.notifications,
-              title: "Notifications",
-              subtitle: "Alert preferences",
-              onTap: () {},
-              colorScheme: colorScheme,
-            ),
-
-            _m3Tile(
-              icon: Icons.storage,
-              title: "Storage",
-              subtitle: "Manage photos and data",
-              onTap: () {},
-              colorScheme: colorScheme,
-            ),
+            // Settings options
+            _buildSettingTile("Security Devices", "Manage paired devices", Icons.security, colors),
+            _buildSettingTile("Notifications", "Alert preferences", Icons.notifications, colors),
+            _buildSettingTile("Storage", "Manage photos and data", Icons.storage, colors),
 
             const SizedBox(height: 20),
 
-            FilledButton.tonal(
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                backgroundColor: colorScheme.errorContainer,
-                foregroundColor: colorScheme.onErrorContainer,
+            // Logout button
+            _buildLogoutButton(colors, context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Profile card widget
+  Widget _buildProfileCard(User? user, ColorScheme colors, ThemeData theme) {
+    return Card(
+      elevation: 0,
+      color: colors.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 38,
+              backgroundColor: colors.primaryContainer,
+              child: Icon(Icons.person, size: 42, color: colors.onPrimaryContainer),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              user?.displayName ?? "User Name",
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface,
               ),
-              onPressed: () => _logout(context),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.logout),
-                  SizedBox(width: 8),
-                  Text(
-                    "Logout",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              user?.email ?? "user@example.com",
+              style: theme.textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
         ),
@@ -145,7 +87,64 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _logout(BuildContext context) async {
+  // Section title widget
+  Widget _buildSectionTitle(String title, ColorScheme colors, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: colors.primary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  // Settings tile widget
+  Widget _buildSettingTile(String title, String subtitle, IconData icon, ColorScheme colors) {
+    return Card(
+      elevation: 0,
+      color: colors.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        onTap: () {}, // Add functionality here
+        leading: CircleAvatar(
+          radius: 22,
+          backgroundColor: colors.primaryContainer,
+          child: Icon(icon, color: colors.onPrimaryContainer),
+        ),
+        title: Text(title, style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: TextStyle(color: colors.onSurfaceVariant)),
+        trailing: Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+      ),
+    );
+  }
+
+  // Logout button widget
+  Widget _buildLogoutButton(ColorScheme colors, BuildContext context) {
+    return FilledButton.tonal(
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        backgroundColor: colors.errorContainer,
+        foregroundColor: colors.onErrorContainer,
+      ),
+      onPressed: () => _showLogoutDialog(context),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.logout),
+          SizedBox(width: 8),
+          Text("Logout", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  // Logout confirmation dialog
+  void _showLogoutDialog(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -168,47 +167,5 @@ class AccountScreen extends StatelessWidget {
       await FirebaseAuth.instance.signOut();
       Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
     }
-  }
-
-  Widget _m3Tile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-    required ColorScheme colorScheme,
-  }) {
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          radius: 22,
-          backgroundColor: colorScheme.primaryContainer,
-          child: Icon(icon, color: colorScheme.onPrimaryContainer),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
   }
 }

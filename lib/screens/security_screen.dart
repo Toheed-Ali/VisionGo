@@ -25,7 +25,15 @@ class _SecurityScreenState extends State<SecurityScreen> {
   String _generateCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     Random random = Random();
-    return List.generate(6, (index) => chars[random.nextInt(chars.length)]).join();
+    return List.generate(8, (index) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  String _formatCode(String code) {
+    // Format 8-digit code as "XXXX XXXX" for better readability
+    if (code.length == 8) {
+      return '${code.substring(0, 4)} ${code.substring(4)}';
+    }
+    return code;
   }
 
   void _selectRole(String role) {
@@ -38,10 +46,22 @@ class _SecurityScreenState extends State<SecurityScreen> {
   }
 
   void _pairDevice() {
-    if (_codeController.text.trim().isEmpty) {
+    final code = _codeController.text.trim().replaceAll(' ', '');
+    
+    if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a pairing code'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (code.length != 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pairing code must be 8 characters'),
           backgroundColor: Colors.red,
         ),
       );
@@ -53,7 +73,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => SecurityMonitorScreen(
-          pairingCode: _codeController.text.trim().toUpperCase(),
+          pairingCode: code.toUpperCase(),
         ),
       ),
     );
@@ -74,38 +94,51 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: const Color(0xFF000000),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: const Center(
-                child: Text(
-                  'Security System',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
+    return PopScope(
+      canPop: _deviceRole == null,
+      onPopInvoked: (didPop) {
+        // If a role is selected and user pressed back, go back to role selection
+        if (!didPop && _deviceRole != null) {
+          setState(() {
+            _deviceRole = null;
+            _pairingCode = null;
+            _codeController.clear();
+          });
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: const Color(0xFF000000),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: const Center(
+                  child: Text(
+                    'Security System',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // Main content
-            Expanded(
-              child: _deviceRole == null
-                  ? _buildRoleSelection()
-                  : _deviceRole == 'camera'
-                  ? _buildCameraSetup()
-                  : _buildMonitorSetup(),
-            ),
-          ],
+              // Main content
+              Expanded(
+                child: _deviceRole == null
+                    ? _buildRoleSelection()
+                    : _deviceRole == 'camera'
+                    ? _buildCameraSetup()
+                    : _buildMonitorSetup(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -276,12 +309,12 @@ class _SecurityScreenState extends State<SecurityScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  _pairingCode ?? '',
+                  _formatCode(_pairingCode ?? ''),
                   style: const TextStyle(
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.tealAccent,
-                    letterSpacing: 8,
+                    letterSpacing: 4,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -367,7 +400,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Enter the pairing code from the camera device',
+            'Enter the 8-digit pairing code from the camera device',
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withOpacity(0.7),
@@ -381,18 +414,18 @@ class _SecurityScreenState extends State<SecurityScreen> {
             controller: _codeController,
             textAlign: TextAlign.center,
             textCapitalization: TextCapitalization.characters,
-            maxLength: 6,
+            maxLength: 8,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.white,
-              letterSpacing: 8,
+              letterSpacing: 4,
             ),
             decoration: InputDecoration(
-              hintText: 'XXXXXX',
+              hintText: 'XXXXXXXX',
               hintStyle: TextStyle(
                 color: Colors.white.withOpacity(0.2),
-                letterSpacing: 8,
+                letterSpacing: 4,
               ),
               filled: true,
               fillColor: const Color(0xFF1A1A1A),

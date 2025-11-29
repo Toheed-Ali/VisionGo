@@ -1,8 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'signup.dart';
+import 'dart:ui';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,101 +11,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool obscurePassword = true;
+  // Controllers and state variables
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
   bool _isLoading = false;
-
-  Future<void> _performLogin() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please fill in all fields'),
-            backgroundColor: Colors.black,
-          ),
-        );
-      }
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // Sign in with Firebase Auth
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login successful!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
-          ),
-        );
-
-        // Navigate to home screen
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        String errorMessage = 'An error occurred';
-
-        if (e.code == 'user-not-found') {
-          errorMessage = 'No user found for that email.';
-        } else if (e.code == 'wrong-password') {
-          errorMessage = 'Wrong password provided.';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'The email address is not valid.';
-        } else if (e.code == 'user-disabled') {
-          errorMessage = 'This account has been disabled.';
-        } else if (e.code == 'invalid-credential') {
-          errorMessage = 'Invalid email or password.';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An error occurred: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _performGoogleLogin() async {
-    setState(() => _isLoading = true);
-
-    // For now, we'll show a message that Google login is not implemented
-    // You can integrate Google Sign-In later with firebase_auth
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Google Sign-In will be implemented soon'),
-          backgroundColor: Colors.blue,
-        ),
-      );
-    }
-  }
 
   @override
   void dispose() {
@@ -115,233 +24,357 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // Handle login with Firebase
+  Future<void> _login() async {
+    // Validate fields
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      _showSnackBar('Please fill in all fields', Colors.black);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      _showSnackBar('Login successful!', Colors.green);
+
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on FirebaseAuthException catch (e) {
+      _handleAuthError(e);
+    } catch (e) {
+      _showSnackBar('An error occurred: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // Handle Firebase auth errors
+  void _handleAuthError(FirebaseAuthException e) {
+    String message = 'An error occurred';
+
+    switch (e.code) {
+      case 'user-not-found': message = 'No user found for that email.'; break;
+      case 'wrong-password': message = 'Wrong password provided.'; break;
+      case 'invalid-email': message = 'The email address is not valid.'; break;
+      case 'user-disabled': message = 'This account has been disabled.'; break;
+      case 'invalid-credential': message = 'Invalid email or password.'; break;
+    }
+
+    _showSnackBar(message, Colors.red);
+  }
+
+  // Show snack bar message
+  void _showSnackBar(String message, Color color) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: color,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  // Toggle password visibility
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF000000), Color(0xFF1C1C1C), Color(0xFF333333)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF000000), Color(0xFF1C1C1C), Color(0xFF333333)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: _buildLoginCard(),
+        ),
+      ),
+    );
+  }
+
+  // Main login card widget
+  Widget _buildLoginCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(35),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          padding: const EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            color: const Color.fromRGBO(255, 255, 255, 0.07),
+            borderRadius: BorderRadius.circular(35),
+            border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.3)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                const _TitleSection(),
+                const SizedBox(height: 40),
+                _EmailField(emailController: _emailController),
+                const SizedBox(height: 20),
+                _PasswordField(
+                  passwordController: _passwordController,
+                  obscurePassword: _obscurePassword,
+                  onToggleVisibility: _togglePasswordVisibility,
+                ),
+                const SizedBox(height: 35),
+                _LoginButton(
+                  isLoading: _isLoading,
+                  onLogin: _login,
+                ),
+                const SizedBox(height: 30),
+                const _SignupLink(),
+                const SizedBox(height: 10),
+              ],
             ),
           ),
-          Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(35),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 500),
-                  width: size.width * 0.9,
-                  padding: const EdgeInsets.all(25),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(35),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 10),
-                        Text(
-                          "VisionGo",
-                          style: GoogleFonts.poppins(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "Welcome Back 👋",
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          "Login to continue your journey",
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                        TextField(
-                          controller: _emailController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: "Email",
-                            hintStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: const Icon(Icons.email_outlined, color: Colors.white70),
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: obscurePassword,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: "Password",
-                            hintStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                color: Colors.white70,
-                              ),
-                              onPressed: () {
-                                setState(() => obscurePassword = !obscurePassword);
-                              },
-                            ),
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(20),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 35),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          width: double.infinity,
-                          height: 55,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF0000), Color(0xFF590000)],
-                            ),
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            onPressed: _isLoading ? null : _performLogin,
-                            child: _isLoading
-                                ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                                : Text(
-                              "Login",
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 25),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.white),
-                            label: Text(
-                              "Login with Google",
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white.withOpacity(0.15),
-                              side: BorderSide(color: Colors.white.withOpacity(0.6)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            onPressed: _isLoading ? null : _performGoogleLogin,
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Don't have an account? ",
-                              style: GoogleFonts.poppins(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  PageRouteBuilder(
-                                    transitionDuration: const Duration(milliseconds: 700),
-                                    pageBuilder: (context, animation, secondaryAnimation) =>
-                                    const SignupScreen(),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      final fade = Tween<double>(begin: 0, end: 1).animate(
-                                        CurvedAnimation(parent: animation, curve: Curves.easeIn),
-                                      );
-                                      return FadeTransition(opacity: fade, child: child);
-                                    },
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                "Sign Up",
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                ),
+        ),
+      ),
+    );
+  }
+}
+
+// Title section widget
+class _TitleSection extends StatelessWidget {
+  const _TitleSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // App Logo
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withOpacity(0.3),
+                blurRadius: 15,
+                spreadRadius: 2,
               ),
+            ],
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              'assets/icons/app_icon.png',
+              fit: BoxFit.cover,
             ),
+          ),
+        ),
+        const SizedBox(height: 15),
+        const Text(
+          "VisionGo",
+          style: TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          "Login to continue your journey",
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.white70,
+            fontFamily: 'Poppins',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Email field widget
+class _EmailField extends StatelessWidget {
+  final TextEditingController emailController;
+
+  const _EmailField({required this.emailController});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: emailController,
+      style: const TextStyle(color: Colors.white),
+      decoration: const InputDecoration(
+        hintText: "Email",
+        hintStyle: TextStyle(color: Colors.white70),
+        prefixIcon: Icon(Icons.email_outlined, color: Colors.white70),
+        filled: true,
+        fillColor: Color.fromRGBO(255, 255, 255, 0.1),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+// Password field widget
+class _PasswordField extends StatelessWidget {
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final VoidCallback onToggleVisibility;
+
+  const _PasswordField({
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onToggleVisibility,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: passwordController,
+      obscureText: obscurePassword,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: "Password",
+        hintStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+        suffixIcon: IconButton(
+          icon: Icon(
+            obscurePassword ? Icons.visibility_off : Icons.visibility,
+            color: Colors.white70,
+          ),
+          onPressed: onToggleVisibility,
+        ),
+        filled: true,
+        fillColor: const Color.fromRGBO(255, 255, 255, 0.1),
+        border: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+// Login button widget
+class _LoginButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onLogin;
+
+  const _LoginButton({
+    required this.isLoading,
+    required this.onLogin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 55,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFF0000), Color(0xFF590000)],
+        ),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(255, 0, 0, 0.3),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
+      ),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        ),
+        onPressed: isLoading ? null : onLogin,
+        child: isLoading
+            ? const SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+        )
+            : const Text(
+          "Login",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontFamily: 'Poppins',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Signup link widget
+class _SignupLink extends StatelessWidget {
+  const _SignupLink();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "Don't have an account? ",
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 14,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        _SignupButton(),
+      ],
+    );
+  }
+}
+
+// Signup button widget
+class _SignupButton extends StatelessWidget {
+  const _SignupButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const SignupScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(
+              opacity: animation,
+              child: child,
+            );
+          },
+        ),
+      ),
+      child: const Text(
+        "Sign Up",
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 15,
+          fontFamily: 'Poppins',
+        ),
       ),
     );
   }

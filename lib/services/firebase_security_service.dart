@@ -260,6 +260,49 @@ class FirebaseSecurityService {
     }
   }
 
+  /// Save FCM token for a device role in a pairing
+  Future<void> saveFCMToken(String code, String role, String fcmToken) async {
+    try {
+      debugPrint('FirebaseSecurityService: Saving FCM token for code: $code, role: $role');
+      
+      final deviceRef = _database.child('security-pairings').child(code).child('devices').child(role);
+      
+      await deviceRef.update({
+        'fcmToken': fcmToken,
+        'lastActive': ServerValue.timestamp,
+      });
+      
+      debugPrint('FirebaseSecurityService: FCM token saved successfully');
+    } catch (e) {
+      debugPrint('FirebaseSecurityService: Error saving FCM token: $e');
+      rethrow;
+    }
+  }
+
+  /// Get FCM token for a specific device role
+  Future<String?> getFCMToken(String code, String role) async {
+    try {
+      debugPrint('FirebaseSecurityService: Getting FCM token for code: $code, role: $role');
+      
+      final deviceRef = _database.child('security-pairings').child(code).child('devices').child(role);
+      final snapshot = await deviceRef.get();
+      
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+        final token = data['fcmToken'] as String?;
+        
+        debugPrint('FirebaseSecurityService: FCM token ${token != null ? "found" : "not found"}');
+        return token;
+      }
+      
+      debugPrint('FirebaseSecurityService: Device not found');
+      return null;
+    } catch (e) {
+      debugPrint('FirebaseSecurityService: Error getting FCM token: $e');
+      return null;
+    }
+  }
+
   /// Get all devices for a pairing code
   Future<Map<String, dynamic>> getDevices(String code) async {
     try {

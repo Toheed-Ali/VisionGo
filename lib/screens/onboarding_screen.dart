@@ -30,6 +30,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "subtitle": "Upload or choose photos from your gallery for quick and accurate detection.",
       "image": "assets/icons/Gallery.png",
     },
+    {
+      "title": "Advanced Security System",
+      "subtitle": "Monitor your space with intelligent security alerts. Pair devices to receive real-time notifications when objects are detected.",
+      "image": "assets/icons/security_image.jpg",
+    },
   ];
 
   void _goToLogin() async {
@@ -93,6 +98,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         page["image"]!,
                         height: size.height * 0.25,
                         fit: BoxFit.cover,
+                        cacheHeight: (size.height * 0.25 * MediaQuery.of(context).devicePixelRatio).round(),
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             height: size.height * 0.25,

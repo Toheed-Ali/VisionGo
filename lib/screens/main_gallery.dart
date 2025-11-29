@@ -43,7 +43,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
     super.didChangeAppLifecycleState(state);
     // Refresh gallery when app comes to foreground
     if (state == AppLifecycleState.resumed && _hasPermission) {
-      _loadGalleryImages();
+      _loadGalleryImages(showLoading: false);
     }
   }
 
@@ -51,7 +51,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
     // Auto-refresh gallery every 5 seconds to detect new images
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted && _hasPermission && _initialLoadComplete) {
-        _loadGalleryImages();
+        _loadGalleryImages(showLoading: false);
       }
     });
   }
@@ -75,7 +75,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
         _initializeCamera();
 
         // Load gallery images
-        await _loadGalleryImages();
+        await _loadGalleryImages(showLoading: true);
       } else {
         if (mounted) {
           setState(() {
@@ -116,11 +116,11 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
     }
   }
 
-  Future<void> _loadGalleryImages() async {
+  Future<void> _loadGalleryImages({bool showLoading = false}) async {
     if (!_hasPermission) return;
 
-    // Only show loading on initial load or manual refresh
-    if (!_initialLoadComplete) {
+    // Only show loading indicator if explicitly requested (initial load or manual refresh)
+    if (showLoading && !_initialLoadComplete) {
       if (mounted) {
         setState(() {
           _isLoading = true;
@@ -154,19 +154,42 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
         final int totalCount = await albums[0].assetCountAsync;
 
         if (totalCount > 0) {
+          // Get ALL images, sorted by creation date (newest first)
           allMedia = await albums[0].getAssetListRange(
             start: 0,
-            end: totalCount > 100 ? 100 : totalCount,
+            end: totalCount,
           );
+
+          // Sort by creation date in descending order (newest first)
+          allMedia.sort((a, b) {
+            final aDate = a.createDateTime;
+            final bDate = b.createDateTime;
+            return bDate.compareTo(aDate);
+          });
         }
       }
 
+      // Only update if the list has actually changed to avoid unnecessary rebuilds
       if (mounted) {
-        setState(() {
-          _mediaList = allMedia;
-          _isLoading = false;
-          _initialLoadComplete = true;
-        });
+        bool hasChanged = _mediaList.length != allMedia.length;
+
+        if (!hasChanged && _mediaList.isNotEmpty && allMedia.isNotEmpty) {
+          // Check if the first item is different (new image added)
+          hasChanged = _mediaList.first.id != allMedia.first.id;
+        }
+
+        if (hasChanged || !_initialLoadComplete) {
+          setState(() {
+            _mediaList = allMedia;
+            _isLoading = false;
+            _initialLoadComplete = true;
+          });
+        } else if (showLoading) {
+          // Only update loading state if needed
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       debugPrint('Error loading gallery: $e');
@@ -177,13 +200,6 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
         });
       }
     }
-  }
-
-  Future<void> _refreshGallery() async {
-    setState(() {
-      _isLoading = true;
-    });
-    await _loadGalleryImages();
   }
 
   void _showPermissionDialog() {
@@ -287,36 +303,16 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Spacer(),
-                  const Text(
-                    'VisionGo',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
+              child: const Center(
+                child: Text(
+                  'VisionGo',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
                   ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: _hasPermission ? _refreshGallery : null,
-                        icon: const Icon(Icons.refresh, color: Colors.white),
-                        iconSize: 24,
-                        tooltip: 'Refresh Gallery',
-                      ),
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.more_vert, color: Colors.white),
-                        iconSize: 24,
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -445,78 +441,76 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _refreshGallery,
-      color: Colors.white,
-      backgroundColor: Colors.black,
-      child: GridView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 4,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 1,
-        ),
-        itemCount: _mediaList.length,
-        itemBuilder: (context, index) {
-          return GestureDetector(
-            onTap: () => _onImageTap(_mediaList[index]),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: FutureBuilder<Widget>(
-                  future: _buildImageThumbnail(_mediaList[index]),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Stack(
-                        children: [
-                          snapshot.data!,
-                          // Subtle gradient overlay
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.1),
-                                ],
-                              ),
+    return GridView.builder(
+      key: PageStorageKey<String>('gallery_grid'), // Preserve scroll position
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1,
+      ),
+      itemCount: _mediaList.length,
+      itemBuilder: (context, index) {
+        final asset = _mediaList[index];
+        return GestureDetector(
+          key: ValueKey(asset.id), // Unique key for each item to prevent rebuilds
+          onTap: () => _onImageTap(asset),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: FutureBuilder<Widget>(
+                future: _buildImageThumbnail(asset),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Stack(
+                      children: [
+                        snapshot.data!,
+                        // Subtle gradient overlay
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.1),
+                              ],
                             ),
                           ),
-                        ],
-                      );
-                    }
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A1A1A),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white24,
-                          strokeWidth: 2,
                         ),
-                      ),
+                      ],
                     );
-                  },
-                ),
+                  }
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white24,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

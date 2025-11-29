@@ -6,7 +6,10 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
-/// Example:
+/// This class provides platform-specific Firebase configuration
+/// to initialize Firebase services in your Flutter application.
+///
+/// Example usage:
 /// ```dart
 /// import 'firebase_options.dart';
 /// // ...
@@ -15,10 +18,17 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  /// Returns the appropriate FirebaseOptions for the current platform
+  ///
+  /// Automatically detects the platform (Web, Android, iOS, etc.)
+  /// and returns the corresponding Firebase configuration
   static FirebaseOptions get currentPlatform {
+    // Check if running on web platform
     if (kIsWeb) {
       return web;
     }
+
+    // Check native mobile/desktop platforms
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
@@ -31,7 +41,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+              'you can reconfigure this by running the FlutterFire CLI again.',
         );
       default:
         throw UnsupportedError(
@@ -40,54 +50,73 @@ class DefaultFirebaseOptions {
     }
   }
 
+  /// Firebase configuration for Web platform
+  ///
+  /// Contains API keys and project identifiers specific to web deployment
+  /// Used when running the app in a web browser
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAIjW4vXCUUzCEZsxzGjnVopGoKjitLBNY',
-    appId: '1:627643144536:web:27e7260ca31beded9b2d2d',
-    messagingSenderId: '627643144536',
-    projectId: 'vision-go-b1cda',
-    authDomain: 'vision-go-b1cda.firebaseapp.com',
-    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'vision-go-b1cda.firebasestorage.app',
-    measurementId: 'G-6XGN5CKHP0',
+    apiKey: 'AIzaSyAIjW4vXCUUzCEZsxzGjnVopGoKjitLBNY', // Web API key for Firebase services
+    appId: '1:627643144536:web:27e7260ca31beded9b2d2d', // Web application identifier
+    messagingSenderId: '627643144536', // Sender ID for Firebase Cloud Messaging
+    projectId: 'vision-go-b1cda', // Firebase project ID
+    authDomain: 'vision-go-b1cda.firebaseapp.com', // Domain for Firebase Authentication
+    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app', // Realtime Database URL
+    storageBucket: 'vision-go-b1cda.firebasestorage.app', // Cloud Storage bucket URL
+    measurementId: 'G-6XGN5CKHP0', // Google Analytics measurement ID
   );
 
+  /// Firebase configuration for Android platform
+  ///
+  /// Contains API keys and project identifiers specific to Android apps
+  /// Used when running the app on Android devices
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDOVZVg9RTk_MKq_-j8sSM8ViJ0lhX0L-c',
-    appId: '1:627643144536:android:16e48b24818377e69b2d2d',
-    messagingSenderId: '627643144536',
-    projectId: 'vision-go-b1cda',
-    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'vision-go-b1cda.firebasestorage.app',
+    apiKey: 'AIzaSyDOVZVg9RTk_MKq_-j8sSM8ViJ0lhX0L-c', // Android API key
+    appId: '1:627643144536:android:16e48b24818377e69b2d2d', // Android application identifier
+    messagingSenderId: '627643144536', // Sender ID for FCM
+    projectId: 'vision-go-b1cda', // Firebase project ID
+    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app', // Realtime Database URL
+    storageBucket: 'vision-go-b1cda.firebasestorage.app', // Cloud Storage bucket
   );
 
+  /// Firebase configuration for iOS platform
+  ///
+  /// Contains API keys and project identifiers specific to iOS apps
+  /// Used when running the app on iOS devices (iPhone, iPad)
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA12DUE-b5WGZ6Ac9ImrK-Xn3GayOvhBYI',
-    appId: '1:627643144536:ios:6ccd51cf40ac3fdd9b2d2d',
-    messagingSenderId: '627643144536',
-    projectId: 'vision-go-b1cda',
-    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'vision-go-b1cda.firebasestorage.app',
-    iosBundleId: 'com.example.objectDetection',
+    apiKey: 'AIzaSyA12DUE-b5WGZ6Ac9ImrK-Xn3GayOvhBYI', // iOS API key
+    appId: '1:627643144536:ios:6ccd51cf40ac3fdd9b2d2d', // iOS application identifier
+    messagingSenderId: '627643144536', // Sender ID for FCM
+    projectId: 'vision-go-b1cda', // Firebase project ID
+    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app', // Realtime Database URL
+    storageBucket: 'vision-go-b1cda.firebasestorage.app', // Cloud Storage bucket
+    iosBundleId: 'com.example.objectDetection', // iOS bundle identifier (matches Xcode project)
   );
 
+  /// Firebase configuration for macOS platform
+  ///
+  /// Contains API keys and project identifiers specific to macOS desktop apps
+  /// Used when running the app on Apple computers
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA12DUE-b5WGZ6Ac9ImrK-Xn3GayOvhBYI',
-    appId: '1:627643144536:ios:6ccd51cf40ac3fdd9b2d2d',
-    messagingSenderId: '627643144536',
-    projectId: 'vision-go-b1cda',
-    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'vision-go-b1cda.firebasestorage.app',
-    iosBundleId: 'com.example.objectDetection',
+    apiKey: 'AIzaSyA12DUE-b5WGZ6Ac9ImrK-Xn3GayOvhBYI', // macOS API key
+    appId: '1:627643144536:ios:6ccd51cf40ac3fdd9b2d2d', // macOS application identifier
+    messagingSenderId: '627643144536', // Sender ID for FCM
+    projectId: 'vision-go-b1cda', // Firebase project ID
+    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app', // Realtime Database URL
+    storageBucket: 'vision-go-b1cda.firebasestorage.app', // Cloud Storage bucket
+    iosBundleId: 'com.example.objectDetection', // macOS bundle identifier
   );
 
+  /// Firebase configuration for Windows platform
+  /// Contains API keys and project identifiers specific to Windows desktop apps
+  /// Used when running the app on Windows computers
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAIjW4vXCUUzCEZsxzGjnVopGoKjitLBNY',
-    appId: '1:627643144536:web:35df0aeeba9968419b2d2d',
-    messagingSenderId: '627643144536',
-    projectId: 'vision-go-b1cda',
-    authDomain: 'vision-go-b1cda.firebaseapp.com',
-    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app',
-    storageBucket: 'vision-go-b1cda.firebasestorage.app',
-    measurementId: 'G-B7401BG55W',
+    apiKey: 'AIzaSyAIjW4vXCUUzCEZsxzGjnVopGoKjitLBNY', // Windows API key
+    appId: '1:627643144536:web:35df0aeeba9968419b2d2d', // Windows application identifier
+    messagingSenderId: '627643144536', // Sender ID for FCM
+    projectId: 'vision-go-b1cda', // Firebase project ID
+    authDomain: 'vision-go-b1cda.firebaseapp.com', // Domain for Firebase Authentication
+    databaseURL: 'https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app', // Realtime Database URL
+    storageBucket: 'vision-go-b1cda.firebasestorage.app', // Cloud Storage bucket
+    measurementId: 'G-B7401BG55W', // Google Analytics measurement ID
   );
 }

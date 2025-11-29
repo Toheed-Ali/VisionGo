@@ -122,23 +122,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  Future<void> _performGoogleSignup() async {
-    setState(() => _isLoading = true);
 
-    // For now, we'll show a message that Google signup is not implemented
-    // You can integrate Google Sign-In later with firebase_auth
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Google Sign-In will be implemented soon'),
-          backgroundColor: Colors.blue,
-        ),
-      );
-    }
-  }
 
   @override
   void dispose() {
@@ -190,6 +174,28 @@ class _SignupScreenState extends State<SignupScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 10),
+                        // App Logo
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.3),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/icons/app_icon.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
                         Text(
                           "VisionGo",
                           style: GoogleFonts.poppins(
@@ -197,15 +203,6 @@ class _SignupScreenState extends State<SignupScreen> {
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             letterSpacing: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "Create Account ✨",
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -344,30 +341,6 @@ class _SignupScreenState extends State<SignupScreen> {
                                 color: Colors.white,
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 25),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.white),
-                            label: Text(
-                              "Sign up with Google",
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: Colors.white.withOpacity(0.15),
-                              side: BorderSide(color: Colors.white.withOpacity(0.6)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            onPressed: _isLoading ? null : _performGoogleSignup,
                           ),
                         ),
                         const SizedBox(height: 30),

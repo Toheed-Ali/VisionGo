@@ -30,17 +30,22 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
 
   final FirebaseSecurityService _securityService = FirebaseSecurityService();
 
+  // Priority objects are now at the beginning of the main list
   final List<String> _allObjects = [
-    'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',
-    'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat',
-    'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack',
-    'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-    'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple',
-    'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair',
-    'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
-    'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book',
-    'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+    // Priority objects
+    'person', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
+    'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+    // Other objects (alphabetically sorted)
+    'airplane', 'apple', 'backpack', 'banana', 'baseball bat', 'baseball glove',
+    'bear', 'bench', 'bicycle', 'bird', 'boat', 'book', 'bottle', 'bowl',
+    'broccoli', 'bus', 'cake', 'car', 'carrot', 'cat', 'clock', 'cow', 'cup',
+    'dog', 'donut', 'elephant', 'fire hydrant', 'fork', 'frisbee', 'giraffe',
+    'hair drier', 'handbag', 'horse', 'hot dog', 'kite', 'knife', 'microwave',
+    'motorcycle', 'orange', 'oven', 'parking meter', 'pizza', 'refrigerator',
+    'sandwich', 'scissors', 'sheep', 'sink', 'skateboard', 'skis', 'snowboard',
+    'spoon', 'sports ball', 'stop sign', 'suitcase', 'surfboard', 'teddy bear',
+    'tennis racket', 'tie', 'toaster', 'toothbrush', 'traffic light', 'train',
+    'truck', 'umbrella', 'vase', 'wine glass', 'zebra'
   ];
 
   @override
@@ -142,14 +147,12 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
       _lastImagePath = image.path;
       final file = File(image.path);
 
-      // Get actual image dimensions
       final imageBytes = await file.readAsBytes();
       final decodedImage = await decodeImageFromList(imageBytes);
       _previewSize = Size(decodedImage.width.toDouble(), decodedImage.height.toDouble());
 
       final detections = await YoloDetector.detectObjects(file);
 
-      // Check for selected objects and send alerts
       for (var detection in detections) {
         if (_selectedObjects.contains(detection.label)) {
           await _sendAlert(detection.label, detection.confidence);
@@ -177,12 +180,10 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
   }
 
   Future<void> _sendAlert(String objectLabel, double confidence) async {
-    // Save alert to Firebase security service
     await _securityService.addAlert(widget.pairingCode, objectLabel, confidence);
 
     debugPrint('ALERT: Detected $objectLabel - Saved to security service');
 
-    // Show local notification
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -202,132 +203,16 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) {
-          return DraggableScrollableSheet(
-            initialChildSize: 0.8,
-            maxChildSize: 0.95,
-            minChildSize: 0.5,
-            expand: false,
-            builder: (context, scrollController) {
-              return Column(
-                children: [
-                  const SizedBox(height: 12),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      'Select Objects to Monitor',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      '${_selectedObjects.length} object${_selectedObjects.length == 1 ? '' : 's'} selected',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.6),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _allObjects.length,
-                      itemBuilder: (context, index) {
-                        final object = _allObjects[index];
-                        final isSelected = _selectedObjects.contains(object);
-
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.tealAccent.withOpacity(0.1)
-                                : const Color(0xFF2A2A2A),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected
-                                  ? Colors.tealAccent
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                          child: CheckboxListTile(
-                            value: isSelected,
-                            onChanged: (value) async {
-                              setModalState(() {
-                                if (value == true) {
-                                  _selectedObjects.add(object);
-                                } else {
-                                  _selectedObjects.remove(object);
-                                }
-                              });
-                              setState(() {});
-                              // Update in security service
-                              await _securityService.updateSelectedObjects(
-                                widget.pairingCode,
-                                _selectedObjects,
-                              );
-                            },
-                            title: Text(
-                              object,
-                              style: TextStyle(
-                                color: isSelected ? Colors.tealAccent : Colors.white,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                              ),
-                            ),
-                            activeColor: Colors.tealAccent,
-                            checkColor: Colors.black,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.tealAccent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Confirm Selection',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
+      builder: (context) => _ObjectSelectionSheet(
+        allObjects: _allObjects,
+        selectedObjects: _selectedObjects,
+        onSelectionChanged: (newSelection) async {
+          setState(() {
+            _selectedObjects = newSelection;
+          });
+          await _securityService.updateSelectedObjects(
+            widget.pairingCode,
+            _selectedObjects,
           );
         },
       ),
@@ -514,6 +399,240 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
   }
 }
 
+// Separate stateful widget for object selection
+class _ObjectSelectionSheet extends StatefulWidget {
+  final List<String> allObjects;
+  final List<String> selectedObjects;
+  final Function(List<String>) onSelectionChanged;
+
+  const _ObjectSelectionSheet({
+    required this.allObjects,
+    required this.selectedObjects,
+    required this.onSelectionChanged,
+  });
+
+  @override
+  State<_ObjectSelectionSheet> createState() => _ObjectSelectionSheetState();
+}
+
+class _ObjectSelectionSheetState extends State<_ObjectSelectionSheet> {
+  late List<String> _selectedObjects;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedObjects = List.from(widget.selectedObjects);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<String> _getFilteredObjects() {
+    if (_searchQuery.isEmpty) {
+      // Return objects in their original order (priority first, then others)
+      return widget.allObjects;
+    }
+
+    // When searching, return filtered results sorted alphabetically
+    return widget.allObjects
+        .where((obj) => obj.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList()
+      ..sort();
+  }
+
+  void _toggleSelection(String object) {
+    setState(() {
+      if (_selectedObjects.contains(object)) {
+        _selectedObjects.remove(object);
+      } else {
+        _selectedObjects.add(object);
+      }
+    });
+    // Update Firebase asynchronously without waiting
+    widget.onSelectionChanged(_selectedObjects);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredObjects = _getFilteredObjects();
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.8,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      expand: false,
+      builder: (context, scrollController) {
+        return Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Select Objects to Monitor',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                '${_selectedObjects.length} object${_selectedObjects.length == 1 ? '' : 's'} selected',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Search objects...',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.white70),
+                    onPressed: () {
+                      setState(() {
+                        _searchController.clear();
+                        _searchQuery = '';
+                      });
+                    },
+                  )
+                      : null,
+                  filled: true,
+                  fillColor: const Color(0xFF2A2A2A),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Grid of objects
+            Expanded(
+              child: GridView.builder(
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: filteredObjects.length,
+                itemBuilder: (context, index) {
+                  final object = filteredObjects[index];
+                  final isSelected = _selectedObjects.contains(object);
+
+                  return GestureDetector(
+                    onTap: () => _toggleSelection(object),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.tealAccent.withOpacity(0.15)
+                            : const Color(0xFF2A2A2A),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? Colors.tealAccent
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isSelected,
+                            onChanged: (_) => _toggleSelection(object),
+                            activeColor: Colors.tealAccent,
+                            checkColor: Colors.black,
+                          ),
+                          Expanded(
+                            child: Text(
+                              object,
+                              style: TextStyle(
+                                color: isSelected ? Colors.tealAccent : Colors.white,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.tealAccent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Confirm Selection',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 // Custom painter for drawing bounding boxes
 class SecurityDetectionPainter extends CustomPainter {
   final List<Detection> detections;
@@ -540,7 +659,6 @@ class SecurityDetectionPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    // Calculate scaling for the full-screen camera preview
     final previewAspectRatio = previewSize.width / previewSize.height;
     final screenAspectRatio = screenSize.width / screenSize.height;
 
@@ -566,7 +684,6 @@ class SecurityDetectionPainter extends CustomPainter {
 
       paint.color = color;
 
-      // Scale bounding box to screen coordinates
       final rect = Rect.fromLTRB(
         (detection.boundingBox.x1 * scaleX) + offsetX,
         (detection.boundingBox.y1 * scaleY) + offsetY,
@@ -574,10 +691,8 @@ class SecurityDetectionPainter extends CustomPainter {
         (detection.boundingBox.y2 * scaleY) + offsetY,
       );
 
-      // Draw bounding box
       canvas.drawRect(rect, paint);
 
-      // Draw label background
       final labelText = '${detection.label} ${(detection.confidence * 100).toInt()}%';
       textPainter.text = TextSpan(
         text: labelText,
@@ -601,7 +716,6 @@ class SecurityDetectionPainter extends CustomPainter {
         Paint()..color = Colors.black.withOpacity(0.7),
       );
 
-      // Draw label text
       textPainter.paint(canvas, Offset(rect.left + 4, rect.top - 18));
     }
   }

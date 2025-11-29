@@ -32,6 +32,8 @@ dependencies:
 #  camera_ios: ^0.10.4
   path: ^1.8.3
   cloud_firestore: ^4.17.5
+  firebase_messaging: ^14.7.9
+  flutter_local_notifications: 16.1.0
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +49,7 @@ flutter:
     - assets/icons/app_icon.png
     - assets/icons/Camera.jpeg
     - assets/icons/Gallery.png
+    - assets/icons/security_image.jpg
     - assets/models/yolov8n_float32.tflite
     - assets/icons/
     - assets/labels.txt
