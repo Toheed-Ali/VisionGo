@@ -41,7 +41,7 @@ class AccountScreen extends StatelessWidget {
             // Settings options
             _buildSettingTile("Security Devices", "Manage paired devices", Icons.security, colors),
             _buildSettingTile("Notifications", "Alert preferences", Icons.notifications, colors),
-            _buildSettingTile("Storage", "Manage photos and data", Icons.storage, colors),
+            _buildSettingTile("Version", "1.0.0", Icons.storage, colors),
 
             const SizedBox(height: 20),
 
@@ -117,7 +117,6 @@ class AccountScreen extends StatelessWidget {
         ),
         title: Text(title, style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w600)),
         subtitle: Text(subtitle, style: TextStyle(color: colors.onSurfaceVariant)),
-        trailing: Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
       ),
     );
   }
