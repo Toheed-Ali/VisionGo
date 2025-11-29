@@ -47,7 +47,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
 
   void _pairDevice() {
     final code = _codeController.text.trim().replaceAll(' ', '');
-    
+
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

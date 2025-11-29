@@ -98,7 +98,7 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
           (alerts) {
         if (mounted) {
           setState(() => _alerts = alerts);
-          
+
           // Show notification for new alerts
           if (alerts.isNotEmpty) {
             final latestAlert = alerts.first;
@@ -166,7 +166,7 @@ class _SecurityMonitorScreenState extends State<SecurityMonitorScreen> {
             onPressed: () async {
               // Cancel notifications
               await _notificationService.cancelAllNotifications();
-              
+
               await _securityService.deletePairing(widget.pairingCode);
               if (mounted) {
                 Navigator.pop(context);
