@@ -441,83 +441,101 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
   }
 }
 
+// Custom painter that draws bounding boxes and labels on the image
 class DetectionPainter extends CustomPainter {
-  final List<Detection> detections;
-  final Size imageSize;
-  final Size containerSize;
+  final List<Detection> detections; // Detection results to draw
+  final Size imageSize; // Original image dimensions
+  final Size containerSize; // Display container dimensions
 
   DetectionPainter(this.detections, this.imageSize, this.containerSize);
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Setup paint for drawing bounding boxes
     final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
+      ..style = PaintingStyle.stroke // Draw outlines only
+      ..strokeWidth = 3; // Thick lines for visibility
 
+    // Text painter for drawing labels
     final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
+      textDirection: TextDirection.ltr, // Left-to-right text
     );
 
+    // Calculate aspect ratios for proper scaling
     final imageAspectRatio = imageSize.width / imageSize.height;
     final containerAspectRatio = containerSize.width / containerSize.height;
 
+    // Variables for scaled display calculations
     double displayWidth, displayHeight, offsetX, offsetY;
 
+    // Calculate how to fit the image in the container while maintaining aspect ratio
     if (containerAspectRatio > imageAspectRatio) {
+      // Container is wider than image - fit by height
       displayHeight = containerSize.height;
       displayWidth = displayHeight * imageAspectRatio;
-      offsetX = (containerSize.width - displayWidth) / 2;
+      offsetX = (containerSize.width - displayWidth) / 2; // Center horizontally
       offsetY = 0;
     } else {
+      // Container is taller than image - fit by width
       displayWidth = containerSize.width;
       displayHeight = displayWidth / imageAspectRatio;
       offsetX = 0;
-      offsetY = (containerSize.height - displayHeight) / 2;
+      offsetY = (containerSize.height - displayHeight) / 2; // Center vertically
     }
 
+    // Calculate scaling factors to convert from image coordinates to display coordinates
     final scaleX = displayWidth / imageSize.width;
     final scaleY = displayHeight / imageSize.height;
 
+    // Draw each detection
     for (int i = 0; i < detections.length; i++) {
       final detection = detections[i];
-      final color = _getColorForIndex(i);
+      final color = _getColorForIndex(i); // Get color for this detection
 
-      paint.color = color;
+      paint.color = color; // Set bounding box color
 
+      // Convert bounding box coordinates from image space to display space
       final scaledX1 = detection.boundingBox.x1 * scaleX + offsetX;
       final scaledY1 = detection.boundingBox.y1 * scaleY + offsetY;
       final scaledX2 = detection.boundingBox.x2 * scaleX + offsetX;
       final scaledY2 = detection.boundingBox.y2 * scaleY + offsetY;
 
+      // Create rectangle for bounding box
       final rect = Rect.fromLTRB(scaledX1, scaledY1, scaledX2, scaledY2);
 
+      // Draw the bounding box
       canvas.drawRect(rect, paint);
 
+      // Prepare label text with object name and confidence
       final labelText = '${detection.label} ${(detection.confidence * 100).toInt()}%';
       textPainter.text = TextSpan(
         text: labelText,
         style: const TextStyle(
-          color: Colors.white,
+          color: Colors.white, // White text for contrast
           fontSize: 14,
           fontWeight: FontWeight.bold,
         ),
       );
-      textPainter.layout();
+      textPainter.layout(); // Calculate text dimensions
 
+      // Position label above bounding box, or below if too close to top
       final labelY = scaledY1 > 24 ? scaledY1 - 24 : scaledY1 + 4;
 
+      // Draw background rectangle for label text
       final labelBgRect = Rect.fromLTWH(
         scaledX1,
         labelY,
-        textPainter.width + 8,
-        20,
+        textPainter.width + 8, // Add padding
+        20, // Fixed height
       );
       canvas.drawRect(labelBgRect, Paint()..color = color);
 
+      // Draw the text on top of the background
       textPainter.paint(canvas, Offset(scaledX1 + 4, labelY + 2));
     }
   }
 
+  // Get consistent colors for detection boxes (same as in main class)
   Color _getColorForIndex(int index) {
     final colors = [
       Colors.red,
@@ -534,4 +552,6 @@ class DetectionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+// Always repaint when new detections come in
+// This could be optimized to only repaint when detections actually change
 }
