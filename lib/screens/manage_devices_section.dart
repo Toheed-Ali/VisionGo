@@ -1,9 +1,3 @@
-// ============================================
-// COMPLETE UPDATED manage_devices_section.dart
-// Camera devices: No view button, just delete
-// Monitor devices: Show notification icon to view alerts
-// ============================================
-
 import 'package:flutter/material.dart';
 import '../services/firebase_security_service.dart';
 import '../screens/security_monitor_screen.dart';
