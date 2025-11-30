@@ -163,18 +163,7 @@ class SecurityService {
     await prefs.setString('all_pairings', jsonEncode(allPairings));
   }
 
-  Future<bool> _validateCodeLocally(String code) async {
-    final prefs = await SharedPreferences.getInstance();
-    final allPairingsJson = prefs.getString('all_pairings');
 
-    if (allPairingsJson != null) {
-      final allPairings = jsonDecode(allPairingsJson) as Map<String, dynamic>;
-      return allPairings.containsKey(code) &&
-          (allPairings[code]['isActive'] ?? true);
-    }
-
-    return false;
-  }
 
   Future<Map<String, dynamic>?> _getPairingInfoLocally(String code) async {
     final prefs = await SharedPreferences.getInstance();
@@ -209,25 +198,6 @@ class SecurityService {
       final allPairings = jsonDecode(allPairingsJson) as Map<String, dynamic>;
       allPairings.remove(code);
       await prefs.setString('all_pairings', jsonEncode(allPairings));
-    }
-  }
-
-  // USER'S PAIRINGS MANAGEMENT
-  Future<void> _addToUserPairings(String code) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final userPairingsJson = prefs.getString('user_${user.uid}_pairings');
-    List<String> userPairings = [];
-
-    if (userPairingsJson != null) {
-      userPairings = (jsonDecode(userPairingsJson) as List).cast<String>();
-    }
-
-    if (!userPairings.contains(code)) {
-      userPairings.add(code);
-      await prefs.setString('user_${user.uid}_pairings', jsonEncode(userPairings));
     }
   }
 
@@ -291,21 +261,6 @@ class SecurityService {
     }
   }
 
-  // ALERTS MANAGEMENT
-  Future<void> _storeAlertLocally(String code, Map<String, dynamic> alert) async {
-    final prefs = await SharedPreferences.getInstance();
-    final alerts = await _getAlertsLocally(code);
-
-    alerts.insert(0, alert);
-
-    // Keep only last 100 alerts
-    if (alerts.length > 100) {
-      alerts.removeRange(100, alerts.length);
-    }
-
-    await prefs.setString('alerts_$code', jsonEncode(alerts));
-  }
-
   Future<List<Map<String, dynamic>>> _getAlertsLocally(String code) async {
     final prefs = await SharedPreferences.getInstance();
     final alertsJson = prefs.getString('alerts_$code');
@@ -326,26 +281,6 @@ class SecurityService {
   Future<void> _removeAlertsLocally(String code) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('alerts_$code');
-  }
-
-  // SHARED ALERTS (Simulated multi-device support)
-  Future<void> _storeSharedAlert(String code, Map<String, dynamic> alert) async {
-    final prefs = await SharedPreferences.getInstance();
-    final sharedAlertsJson = prefs.getString('shared_alerts_$code');
-    List<dynamic> sharedAlerts = [];
-
-    if (sharedAlertsJson != null) {
-      sharedAlerts = jsonDecode(sharedAlertsJson) as List;
-    }
-
-    sharedAlerts.insert(0, alert);
-
-    // Keep only last 50 shared alerts
-    if (sharedAlerts.length > 50) {
-      sharedAlerts.removeRange(50, sharedAlerts.length);
-    }
-
-    await prefs.setString('shared_alerts_$code', jsonEncode(sharedAlerts));
   }
 
   Future<List<Map<String, dynamic>>> _getSharedAlerts(String code) async {
