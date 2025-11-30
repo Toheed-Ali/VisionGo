@@ -285,7 +285,7 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -332,7 +332,7 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.8),
+                      Colors.black.withValues(alpha: 0.8),
                       Colors.transparent,
                     ],
                   ),
@@ -345,7 +345,7 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.tealAccent.withOpacity(0.2),
+                          color: Colors.tealAccent.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -388,7 +388,7 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
+        color: Colors.black.withValues(alpha: 0.5),
         shape: BoxShape.circle,
       ),
       child: IconButton(
@@ -497,7 +497,7 @@ class _ObjectSelectionSheetState extends State<_ObjectSelectionSheet> {
                 '${_selectedObjects.length} object${_selectedObjects.length == 1 ? '' : 's'} selected',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -511,7 +511,7 @@ class _ObjectSelectionSheetState extends State<_ObjectSelectionSheet> {
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Search objects...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
                   prefixIcon: const Icon(Icons.search, color: Colors.white70),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
@@ -562,7 +562,7 @@ class _ObjectSelectionSheetState extends State<_ObjectSelectionSheet> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? Colors.tealAccent.withOpacity(0.15)
+                            ? Colors.tealAccent.withValues(alpha: 0.15)
                             : const Color(0xFF2A2A2A),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -713,7 +713,7 @@ class SecurityDetectionPainter extends CustomPainter {
 
       canvas.drawRect(
         labelBackgroundRect,
-        Paint()..color = Colors.black.withOpacity(0.7),
+        Paint()..color = Colors.black.withValues(alpha: 0.7),
       );
 
       textPainter.paint(canvas, Offset(rect.left + 4, rect.top - 18));
