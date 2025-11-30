@@ -13,7 +13,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     print('   Data: ${message.data}');
     print('   Notification: ${message.notification?.title}');
   }
-  
+
   // Background notifications are handled by the OS using the data payload
   // Local notifications will be shown automatically by FCM
 }
@@ -290,7 +290,7 @@ class NotificationService {
   }) async {
     debugPrint('NotificationService: Sending security alert for $object');
 
-    final title = '🚨 Security Alert';
+    const title = '🚨 Security Alert';
     final body = '$object detected (${(confidence * 100).toStringAsFixed(0)}% confidence)';
 
     await _showLocalNotification(

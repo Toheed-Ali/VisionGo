@@ -121,16 +121,16 @@ class _HomeScreenState extends State<HomeScreen> {
             gradient: const LinearGradient(
               colors: [Color(0xFF1F1F1F), Color(0xFF1A1A1A)],
             ),
-            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1.5),
             borderRadius: BorderRadius.circular(35),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
-                color: Colors.tealAccent.withOpacity(0.1),
+                color: Colors.tealAccent.withValues(alpha: 0.1),
                 blurRadius: 40,
               ),
             ],
@@ -168,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Icon(
                     isActive ? item['activeIcon'] : item['icon'],
                     key: ValueKey('$index-$isActive'),
-                    color: isActive ? Colors.tealAccent : Colors.white.withOpacity(0.5),
+                    color: isActive ? Colors.tealAccent : Colors.white.withValues(alpha: 0.5),
                     size: isActive ? 28 : 24,
                   ),
                 ),
@@ -193,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                Colors.tealAccent.withOpacity(0.15 * value),
+                Colors.tealAccent.withValues(alpha: 0.15 * value),
                 Colors.transparent,
               ],
             ),
