@@ -29,15 +29,10 @@ void main() async {
 
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // Register background message handler but don't initialize notifications yet
+    // Notifications will be initialized after login/signup in gallery screen
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    await NotificationService().initialize();
     await FirebaseSecurityService().initialize();
-    
-    // Handle app opened from notification (terminated state)
-    final initialMessage = await NotificationService().getInitialMessage();
-    if (initialMessage != null && kDebugMode) {
-      print('App opened from notification: ${initialMessage.messageId}');
-    }
   } catch (e) {
     if (kDebugMode) print('Initialization error: $e');
   }

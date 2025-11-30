@@ -61,6 +61,9 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
       // Request camera permission
       final cameraStatus = await Permission.camera.request();
 
+      // Request notification permission
+      final notificationStatus = await Permission.notification.request();
+
       // Request photo permission using PhotoManager
       final PermissionState photoStatus = await PhotoManager.requestPermissionExtend();
 
@@ -76,6 +79,11 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
 
         // Load gallery images
         await _loadGalleryImages(showLoading: true);
+
+        // Show notification permission status if needed
+        if (!notificationStatus.isGranted && mounted) {
+          _showNotificationPermissionInfo();
+        }
       } else {
         if (mounted) {
           setState(() {
@@ -214,7 +222,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: const Text(
-            'This app needs camera and gallery access to function properly.',
+            'This app needs camera and gallery access to function properly. Notification permission is recommended for alerts.',
             style: TextStyle(color: Colors.white70),
           ),
           actions: [
@@ -241,6 +249,27 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
           ],
         );
       },
+    );
+  }
+
+  void _showNotificationPermissionInfo() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Enable notifications to receive detection alerts',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF2A2A2A),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Enable',
+          textColor: Colors.tealAccent,
+          onPressed: () {
+            openAppSettings();
+          },
+        ),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 
@@ -442,7 +471,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
     }
 
     return GridView.builder(
-      key: const PageStorageKey<String>('gallery_grid'), // Preserve scroll position
+      key: const PageStorageKey<String>('gallery_grid'),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
@@ -454,7 +483,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
       itemBuilder: (context, index) {
         final asset = _mediaList[index];
         return GestureDetector(
-          key: ValueKey(asset.id), // Unique key for each item to prevent rebuilds
+          key: ValueKey(asset.id),
           onTap: () => _onImageTap(asset),
           child: Container(
             decoration: BoxDecoration(
@@ -477,7 +506,6 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                     return Stack(
                       children: [
                         snapshot.data!,
-                        // Subtle gradient overlay
                         Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
