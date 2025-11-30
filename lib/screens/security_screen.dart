@@ -169,7 +169,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             'Select how you want to use this device',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -211,7 +211,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -220,7 +220,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.tealAccent.withOpacity(0.1),
+                color: Colors.tealAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -247,7 +247,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                     description,
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -256,7 +256,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             Icon(
               Icons.arrow_forward_ios,
               size: 18,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -289,7 +289,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             'Share this code with monitoring devices',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
           ),
           const SizedBox(height: 32),
@@ -301,7 +301,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
               color: const Color(0xFF1A1A1A),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.tealAccent.withOpacity(0.3),
+                color: Colors.tealAccent.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),
@@ -403,7 +403,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             'Enter the 8-digit pairing code from the camera device',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -424,7 +424,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             decoration: InputDecoration(
               hintText: 'XXXXXXXX',
               hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 letterSpacing: 4,
               ),
               filled: true,
@@ -432,13 +432,13 @@ class _SecurityScreenState extends State<SecurityScreen> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
