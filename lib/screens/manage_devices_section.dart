@@ -141,7 +141,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -177,7 +177,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
             'Manage your paired cameras and monitors',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 16),
@@ -209,7 +209,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
             Icon(
               Icons.devices_other,
               size: 60,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Text(
@@ -217,7 +217,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
               ),
             ),
             const SizedBox(height: 8),
@@ -225,7 +225,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
               'Pair devices from the Security tab',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
               ),
               textAlign: TextAlign.center,
             ),
@@ -249,7 +249,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
             color: const Color(0xFF2A2A2A),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               width: 1,
             ),
           ),
@@ -259,8 +259,8 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: role == 'camera'
-                    ? Colors.blue.withOpacity(0.1)
-                    : Colors.green.withOpacity(0.1),
+                    ? Colors.blue.withValues(alpha: 0.1)
+                    : Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -293,7 +293,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.tealAccent.withOpacity(0.2),
+                        color: Colors.tealAccent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -314,7 +314,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
                   Text(
                     'Monitoring: ${selectedObjects.take(3).join(', ')}${selectedObjects.length > 3 ? '...' : ''}',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                     maxLines: 1,
@@ -325,7 +325,7 @@ class _ManageSecurityDevicesSectionState extends State<ManageSecurityDevicesSect
                   Text(
                     'Paired: ${_formatDate(createdAt)}',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 11,
                     ),
                     maxLines: 1,
