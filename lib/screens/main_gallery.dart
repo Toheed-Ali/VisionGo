@@ -325,7 +325,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(50),
@@ -335,7 +335,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                     children: [
                       Icon(
                         Icons.camera_alt_outlined,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -343,7 +343,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                         'Open camera',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
@@ -374,7 +374,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                           '${_mediaList.length} photos',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
@@ -442,7 +442,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
     }
 
     return GridView.builder(
-      key: PageStorageKey<String>('gallery_grid'), // Preserve scroll position
+      key: const PageStorageKey<String>('gallery_grid'), // Preserve scroll position
       padding: const EdgeInsets.symmetric(horizontal: 12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
@@ -462,7 +462,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -485,7 +485,7 @@ class _MainGalleryScreenState extends State<MainGalleryScreen> with WidgetsBindi
                               end: Alignment.bottomCenter,
                               colors: [
                                 Colors.transparent,
-                                Colors.black.withOpacity(0.1),
+                                Colors.black.withValues(alpha: 0.1),
                               ],
                             ),
                           ),
