@@ -184,7 +184,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
                           ),
                         if (_isProcessing)
                           Container(
-                            color: Colors.black.withOpacity(0.3),
+                            color: Colors.black.withValues(alpha: 0.3),
                             child: const Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -332,7 +332,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.pink.withOpacity(0.1),
+                  color: Colors.pink.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -360,7 +360,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
                 decoration: BoxDecoration(
                   color: Colors.grey[50],
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withOpacity(0.3), width: 2),
+                  border: Border.all(color: color.withValues(alpha: 0.3), width: 2),
                 ),
                 child: Row(
                   children: [
@@ -368,7 +368,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.2),
+                        color: color.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -404,7 +404,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
