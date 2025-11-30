@@ -30,7 +30,6 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
 
   final FirebaseSecurityService _securityService = FirebaseSecurityService();
 
-  // Priority objects are now at the beginning of the main list
   final List<String> _allObjects = [
     'person', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
     'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
