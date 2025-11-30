@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'firebase_security_service.dart';
 import 'package:flutter/material.dart';
 
-// Background message handler (MUST be top-level function)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (kDebugMode) {
@@ -14,9 +13,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     print('   Data: ${message.data}');
     print('   Notification: ${message.notification?.title}');
   }
-
-  // Show notification even in background
-  await NotificationService()._showLocalNotificationFromMessage(message);
+  
+  // Background notifications are handled by the OS using the data payload
+  // Local notifications will be shown automatically by FCM
 }
 
 class NotificationService {

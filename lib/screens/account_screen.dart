@@ -84,8 +84,9 @@ class _AccountScreenState extends State<AccountScreen> {
               _buildProfileCard(),
               const SizedBox(height: 20),
               const ManageSecurityDevicesSection(),
-              const SizedBox(height: 20),
-              _buildSettingsSection(),
+              // const SizedBox(height: 20),
+              // _buildSettingsSection(),
+
               const SizedBox(height: 20),
               _buildAboutSection(),
               const SizedBox(height: 20),
@@ -195,83 +196,7 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  // Settings section with options
-  Widget _buildSettingsSection() {
-    final settings = [
-      {'icon': Icons.notifications, 'title': 'Notifications', 'subtitle': 'Manage notification preferences'},
-      {'icon': Icons.lock, 'title': 'Privacy & Security', 'subtitle': 'Control your privacy settings'},
-      {'icon': Icons.storage, 'title': 'Storage', 'subtitle': 'Manage app data and cache'},
-      {'icon': Icons.language, 'title': 'Language', 'subtitle': 'English (Default)'},
-    ];
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.settings, color: Colors.tealAccent, size: 24),
-              SizedBox(width: 12),
-              Text('Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white12, height: 1),
-          const SizedBox(height: 8),
-
-          // Generate setting items from list
-          ...settings.map((setting) => _buildSettingItem(
-            icon: setting['icon'] as IconData,
-            title: setting['title'] as String,
-            subtitle: setting['subtitle'] as String,
-            onTap: () => _showComingSoonSnackbar(context, setting['title'] as String),
-          )),
-        ],
-      ),
-    );
-  }
-
-  // Individual setting item widget
-  Widget _buildSettingItem({required IconData icon, required String title, required String subtitle, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.tealAccent.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: Colors.tealAccent, size: 20),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.white), overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)), overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white.withValues(alpha: 0.3)),
-          ],
-        ),
-      ),
-    );
-  }
 
   // About section with app info
   Widget _buildAboutSection() {
@@ -354,13 +279,6 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  // Helper function to show coming soon message
-  void _showComingSoonSnackbar(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature coming soon'), backgroundColor: Colors.orange),
     );
   }
 

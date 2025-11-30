@@ -1,6 +1,6 @@
 name: visiongo
 description: Object detection app with YOLO
-publish_to: 'none' # remove this if you want to publish to pub.dev
+publish_to: 'none'
 
 version: 1.0.0+1
 
@@ -11,7 +11,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icons/app_icon.png"
-  min_sdk_android: 21 # optional
+  min_sdk_android: 21
 
 dependencies:
   flutter:
@@ -29,18 +29,18 @@ dependencies:
   path_provider: ^2.1.1
   intl: ^0.20.2
   camera_android: ^0.10.4
-#  camera_ios: ^0.10.4
   path: ^1.8.3
+  http: ^1.2.2
   cloud_firestore: ^4.17.5
   firebase_messaging: ^14.7.9
   flutter_local_notifications: 16.1.0
   device_info_plus: ^9.0.1
+  googleapis_auth: ^1.6.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  http: ^1.2.2
   flutter_launcher_icons: ^0.14.1
 
 flutter:
@@ -54,3 +54,4 @@ flutter:
     - assets/models/yolov8n_float32.tflite
     - assets/icons/
     - assets/labels.txt
+    - assets/vision-go-b1cda-firebase-adminsdk-fbsvc-b137b42825.json
