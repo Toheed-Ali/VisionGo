@@ -50,10 +50,20 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
   String? _monitorFCMToken; // Store monitor's FCM token
   // Complete list of all objects that YOLO can detect (COCO dataset)
   final List<String> _allObjects = [
+    // Priority objects
     'person', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
     'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-    // ... and many more COCO dataset objects
-    'zebra' // Last item in COCO dataset
+    // Other objects (alphabetically sorted)
+    'airplane', 'apple', 'backpack', 'banana', 'baseball bat', 'baseball glove',
+    'bear', 'bench', 'bicycle', 'bird', 'boat', 'book', 'bottle', 'bowl',
+    'broccoli', 'bus', 'cake', 'car', 'carrot', 'cat', 'clock', 'cow', 'cup',
+    'dog', 'donut', 'elephant', 'fire hydrant', 'fork', 'frisbee', 'giraffe',
+    'hair drier', 'handbag', 'horse', 'hot dog', 'kite', 'knife', 'microwave',
+    'motorcycle', 'orange', 'oven', 'parking meter', 'pizza', 'refrigerator',
+    'sandwich', 'scissors', 'sheep', 'sink', 'skateboard', 'skis', 'snowboard',
+    'spoon', 'sports ball', 'stop sign', 'suitcase', 'surfboard', 'teddy bear',
+    'tennis racket', 'tie', 'toaster', 'toothbrush', 'traffic light', 'train',
+    'truck', 'umbrella', 'vase', 'wine glass', 'zebra'
   ];
 
   @override
