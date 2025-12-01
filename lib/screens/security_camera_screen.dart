@@ -50,10 +50,8 @@ class _SecurityCameraScreenState extends State<SecurityCameraScreen> {
   String? _monitorFCMToken; // Store monitor's FCM token
   // Complete list of all objects that YOLO can detect (COCO dataset)
   final List<String> _allObjects = [
-    // Priority objects
     'person', 'chair', 'couch', 'potted plant', 'bed', 'dining table',
     'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-    // Other objects (alphabetically sorted)
     'airplane', 'apple', 'backpack', 'banana', 'baseball bat', 'baseball glove',
     'bear', 'bench', 'bicycle', 'bird', 'boat', 'book', 'bottle', 'bowl',
     'broccoli', 'bus', 'cake', 'car', 'carrot', 'cat', 'clock', 'cow', 'cup',
