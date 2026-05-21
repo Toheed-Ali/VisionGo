@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "627643144536",
+    "firebase_url": "https://vision-go-b1cda-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "vision-go-b1cda",
+    "storage_bucket": "vision-go-b1cda.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:627643144536:android:16e48b24818377e69b2d2d",
+        "android_client_info": {
+          "package_name": "com.example.object_detection"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOVZVg9RTk_MKq_-j8sSM8ViJ0lhX0L-c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
